@@ -1,5 +1,6 @@
-from pets.viewsets import  PatientViewset
+from pets.viewsets import  PatientViewset, PatientAppointmentViewset
 from rest_framework import routers
 
 router = routers.DefaultRouter()
-router.register('patients',PatientViewset)
+router.register('patient',PatientViewset, basename='Patient')
+router.register('patient-appointment', PatientAppointmentViewset)
