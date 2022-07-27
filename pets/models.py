@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
 class Patient(models.Model):
-    id = models.IntegerField(primary_key=True, unique=True)
+    id = models.BigAutoField(primary_key=True)
     pet_name = models.CharField(max_length=255)
     cat = 'cat'
     dog = 'dog'
@@ -25,7 +25,7 @@ class Patient(models.Model):
         return self.pet_name
     
 class PatientAppointment(models.Model):
-    id = models.IntegerField(primary_key=True, unique=True)
+    id = models.BigAutoField(primary_key=True)
     appointment_start_time = models.DateTimeField(_("Appointment start time"), auto_now=False, auto_now_add=False)
     appointment_end_time = models.DateTimeField(_("Appointment end time"), auto_now=False, auto_now_add=False)
     description = models.CharField(_("Enter description"), max_length=1024)
@@ -40,5 +40,5 @@ class PatientAppointment(models.Model):
     payment_type = models.CharField("Select payment Type", choices=PAYMENT_TYPE_CHOICES, null=False, max_length=15, default='USD')
     unpaid_amount = models.IntegerField(_("Enter unpaid amount"))
     total_amount = models.IntegerField(_("Enter total amount"))
-    
+    patient_id = models.ForeignKey(Patient, on_delete=models.DO_NOTHING, null=True) #, null=True)
     

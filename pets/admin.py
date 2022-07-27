@@ -7,4 +7,4 @@ class PatientAdmin(admin.ModelAdmin):
     
 @admin.register(PatientAppointment)
 class PatientAppointmentAdmin(admin.ModelAdmin):
-    list_display = ['appointment_start_time','appointment_end_time', 'description', 'payment_type', 'unpaid_amount','total_amount']
+    list_display = ['appointment_start_time','appointment_end_time', 'description', 'payment_type', 'unpaid_amount','total_amount','patient_id']

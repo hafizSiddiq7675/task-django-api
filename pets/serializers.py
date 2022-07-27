@@ -12,7 +12,6 @@ class PatientSerializer(serializers.ModelSerializer):
             'owner_name',
             'owner_phone_number',
         )
-    id = serializers.IntegerField()
     pet_name = serializers.CharField(required=True)
     pet_type = serializers.CharField(required=True)
     owner_address = serializers.CharField(required=True)
@@ -24,12 +23,14 @@ class PatientAppointmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = PatientAppointment
         fields = (
+            'id',
             'appointment_start_time',
             'appointment_end_time',
             'description',
             'payment_type',
             'unpaid_amount',
             'total_amount',
+            'patient_id'
         )
     appointment_start_time = serializers.DateTimeField(required=True)
     appointment_end_time = serializers.DateTimeField(required=True)
