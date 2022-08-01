@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
+from mmap import PAGESIZE
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -42,11 +43,17 @@ INSTALLED_APPS = [
     'drf_yasg',
 ]
 
+
+# REST_FRAMEWORK = {
+#     'DEFAULT_PAGINATION_CLASS': "pets.CustomPagination.CustomPageNumberPagination",
+#     'PAGE_SIZE' : 5
+# }
+
+
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASSES': "rest_framework.pagination.PageNumberPagination",
     'PAGE_SIZE' : 5
 }
-
 # REST_FRAMEWORK = {
 #     'DEFAULT_PERMISSION_CLASSES': (
 #         'rest_framework.permissions.DjangoModelPermissions',
