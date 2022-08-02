@@ -52,7 +52,7 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASSES': "rest_framework.pagination.PageNumberPagination",
-    'PAGE_SIZE' : 5
+    'PAGE_SIZE' : 5,
 }
 # REST_FRAMEWORK = {
 #     'DEFAULT_PERMISSION_CLASSES': (
@@ -144,6 +144,8 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+DATETIME_FORMAT = '%d-%m-%Y-%H-%M-%S'
 
 
 # Static files (CSS, JavaScript, Images)

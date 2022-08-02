@@ -1,11 +1,13 @@
 from rest_framework import viewsets
 from . import models
 from . import serializers
-from pets.CustomPagination import CustomPageNumberPagination
+# from pets.CustomPagination import CustomPageNumberPagination
+from rest_framework.pagination import PageNumberPagination
 
 from rest_framework.response import Response
 from rest_framework import status
-from django.shortcuts import get_object_or_404, get_list_or_404
+from django.db.models import Q
+
 
 
 
@@ -17,13 +19,18 @@ class PatientAppointmentViewset(viewsets.ModelViewSet):
 
     serializer_class = serializers.PatientAppointmentSerializer
     queryset = models.PatientAppointment.objects.all()
-    pagination_class = CustomPageNumberPagination
+    pagination_class = PageNumberPagination
     
     
-    def list(self,request): #returns list
-        patient_appointment = models.PatientAppointment.objects.all()   
-        serializer = serializers.PatientAppointmentSerializer(patient_appointment, many=True)
-        return Response(serializer.data)
+    def list(self, request):
+        queryset = models.PatientAppointment.objects.all()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = serializers.PatientAppointmentSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        else:
+            serializer = serializers.PatientAppointmentSerializer(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
     
     
     def retrieve(self, request, pk=None): #returns single object
@@ -91,25 +98,44 @@ class PatientViewset(viewsets.ModelViewSet):
     
     serializer_class = serializers.PatientSerializer
     queryset = models.Patient.objects.all()
-    pagination_class = CustomPageNumberPagination
+    pagination_class = PageNumberPagination
     
     
-    def list(self,request): #returns list
-        patient = models.Patient.objects.all()   
-        serializer = serializers.PatientSerializer(patient, many=True)
-        return Response(serializer.data)
+    def list(self, request):
+        queryset = models.Patient.objects.all()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = serializers.PatientSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        else:
+            serializer = serializers.PatientSerializer(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
     
     
+    # def retrieve(self, request, pk=None): #returns single object
+    #     try:
+    #         # id = pk
+    #         if id is not None:
+    #             patient = models.Patient.objects.get(id=id)
+    #             serializer = serializers.PatientSerializer(patient)
+    #         return Response({'success':True, 'msg':'Data retrieved', 'data':serializer.data})
+    #     except Exception as e :
+    #         return Response({'error':str(e)})
+
+    
+        
     def retrieve(self, request, pk=None): #returns single object
         try:
-            # id = pk
+            id = pk
             if id is not None:
                 patient = models.Patient.objects.get(id=id)
                 serializer = serializers.PatientSerializer(patient)
-            return Response({'success':True, 'msg':'Data retrieved', 'data':serializer.data})
-        except Exception as e :
+                patient_appointment = models.PatientAppointment.objects.get(id=patient)
+                serializer_appointment = serializers.PatientAppointmentSerializer(patient_appointment)
+            return Response({'success':True, 'msg':'Data retrieved', 'data':serializer.data,'appointment':serializer_appointment.data})
+        except Exception as e:
             return Response({'error':str(e)})
-
+    
     
     def create(self, request):
         serializer = serializers.PatientSerializer(data=request.data)
@@ -146,15 +172,75 @@ class PatientViewset(viewsets.ModelViewSet):
         return Response({'success':True, 'msg':'Data DEleted'})
 
         
-        
+class UnPaidAppointmentViewSet(viewsets.ModelViewSet):
+    queryset = models.PatientAppointment.objects.filter(unpaid_amount__gt=0)
+    serializer_class = serializers.PatientAppointmentSerializer
+    
+    # def get_unpaid_appointments(request):
+    #     unpaid_appointments = models.PatientAppointment.objects.filter(unpaid_amount__gt=0)
+    #     return render(request,  {'unpaid_appointments': unpaid_appointments})
     
 
+# class GetAppointmentForSpecificDayViewSet(viewsets.ModelViewSet):
+#     day = models.PatientAppointment.objects.filter('appointment_start_time')
+#     queryset = models.PatientAppointment.objects.filter(appointment_start_time__day=day)
+#     serializer_class = serializers.PatientAppointmentSerializer
+
+# class AppointmentsForDayView(ListView):
+#     model = models.PatientAppointment
+#     template_name = 'appointments_for_day.html'
+
+#     def get_queryset(self):
+#         day = self.kwargs['day']
+#         return models.PatientAppointment.objects.filter(appointment_start_time__day=day)
     
-    
-    
-    
-    
-    
+# class AppointmentsForDayViewSet(viewsets.ModelViewSet):
+#     # queryset = models.PatientAppointment.objects.all()
+#     serializer_class = serializers.PatientAppointmentSerializer
+
+#     def get_queryset(self):
+#         day = self.request.query_params.get('d', None)
+#         if day is not None:
+#             return self.queryset.filter(Q(appointment_start_time__d=day))
+#         return self.queryset
+
+
+class AppointmentsForDayViewSet(viewsets.ModelViewSet):
+    queryset = models.PatientAppointment.objects.all()
+    serializer_class = serializers.PatientAppointmentSerializer
+
+    def get_queryset(self):
+        queryset = models.PatientAppointment.objects.all()
+        appointment_start_time = self.request.query_params.get('appointment_start_time', None)
+        if appointment_start_time is not None:
+            queryset = queryset.filter(appointment_start_time__d=appointment_start_time)
+        return queryset
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
     
     
