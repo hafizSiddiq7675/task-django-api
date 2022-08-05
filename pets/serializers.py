@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Patient, PatientAppointment
-from pets_hospital.settings import DATETIME_FORMAT
+# from pets_hospital.settings import DATETIME_FORMAT
 
 class PatientSerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,14 +32,18 @@ class PatientAppointmentSerializer(serializers.ModelSerializer):
             'description',
             'payment_type',
             'unpaid_amount',
+            'paid_amount',
             'total_amount',
             'patient_id',
             'appointments',
         )
-    appointment_start_time = serializers.DateTimeField(required=True,format=DATETIME_FORMAT, input_formats=None)
-    appointment_end_time = serializers.DateTimeField(required=True,format=DATETIME_FORMAT, input_formats=None)
+    appointment_start_time = serializers.DateTimeField(required=True)
+    appointment_end_time = serializers.DateTimeField(required=True)
     description = serializers.CharField(required=False)
     payment_type = serializers.CharField(required=True)
+    paid_amount = serializers.IntegerField(required=True)
     unpaid_amount = serializers.IntegerField(required=True)
     total_amount = serializers.IntegerField(required=True)
     appointments = PatientSerializer(source='patient_id',read_only=True)
+    
+

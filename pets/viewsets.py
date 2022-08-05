@@ -6,7 +6,11 @@ from rest_framework.pagination import PageNumberPagination
 
 from rest_framework.response import Response
 from rest_framework import status
-from django.db.models import Q
+from django_filters import rest_framework as filters
+from django.db.models import Sum
+from datetime import date, timedelta
+import calendar
+import datetime
 
 
 
@@ -176,73 +180,175 @@ class UnPaidAppointmentViewSet(viewsets.ModelViewSet):
     queryset = models.PatientAppointment.objects.filter(unpaid_amount__gt=0)
     serializer_class = serializers.PatientAppointmentSerializer
     
-    # def get_unpaid_appointments(request):
-    #     unpaid_appointments = models.PatientAppointment.objects.filter(unpaid_amount__gt=0)
-    #     return render(request,  {'unpaid_appointments': unpaid_appointments})
-    
-
-# class GetAppointmentForSpecificDayViewSet(viewsets.ModelViewSet):
-#     day = models.PatientAppointment.objects.filter('appointment_start_time')
-#     queryset = models.PatientAppointment.objects.filter(appointment_start_time__day=day)
-#     serializer_class = serializers.PatientAppointmentSerializer
-
-# class AppointmentsForDayView(ListView):
-#     model = models.PatientAppointment
-#     template_name = 'appointments_for_day.html'
-
-#     def get_queryset(self):
-#         day = self.kwargs['day']
-#         return models.PatientAppointment.objects.filter(appointment_start_time__day=day)
-    
-# class AppointmentsForDayViewSet(viewsets.ModelViewSet):
-#     # queryset = models.PatientAppointment.objects.all()
-#     serializer_class = serializers.PatientAppointmentSerializer
-
-#     def get_queryset(self):
-#         day = self.request.query_params.get('d', None)
-#         if day is not None:
-#             return self.queryset.filter(Q(appointment_start_time__d=day))
-#         return self.queryset
-
 
 class AppointmentsForDayViewSet(viewsets.ModelViewSet):
     queryset = models.PatientAppointment.objects.all()
     serializer_class = serializers.PatientAppointmentSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ('appointment_start_time', 'appointment_end_time', 'description', 'payment_type', 'paid_amount', 'unpaid_amount', 'total_amount', 'patient_id')
+    
 
     def get_queryset(self):
-        queryset = models.PatientAppointment.objects.all()
-        appointment_start_time = self.request.query_params.get('appointment_start_time', None)
-        if appointment_start_time is not None:
-            queryset = queryset.filter(appointment_start_time__d=appointment_start_time)
-        return queryset
+        date = self.kwargs['date']
+        return self.queryset.filter(appointment_start_time__date=date)
 
 
+# class AmountPaidSumWeekViewSet(viewsets.ModelViewSet):
+    
+#     # queryset = models.PatientAppointment.objects.all()
+#     queryset=models.PatientAppointment.objects.aggregate(Sum('paid_amount'))
+#     serializer_class = serializers.PatientAppointmentSerializer
+#     filter_backends = (filters.DjangoFilterBackend)
+#     filterset_fields = ('appointment_start_time', 'appointment_end_time', 'description', 'payment_type', 'paid_amount', 'unpaid_amount', 'total_amount', 'patient_id')
+
+#     def get_queryset(self):
+#         # date = self.kwargs['date']
+#         summ = self.queryset
+#         return self.queryset.filter(paid_amount=summ)
+#         # return ({"Sum":summ})
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+class TotalAmountSumViewSet(viewsets.ModelViewSet):
+    queryset = models.PatientAppointment.objects.all()
+    serializer_class = serializers.PatientAppointmentSerializer
+    def list(self, request, *args, **kwargs):
+        try:
+            response = super().list(request, *args, **kwargs)
+            response.data['sum'] = sum([data.get('total_amount', 0) for data in response.data['results']])
+            return response
+        except Exception as e:
+            return Response({'error':str(e)})
 
     
     
+
+class UnpaidAmountSumViewSet(viewsets.ModelViewSet):
+    # queryset = models.PatientAppointment.objects.all()
+    serializer_class = serializers.PatientAppointmentSerializer
+    def list(self, request, *args, **kwargs):
+        try:
+            type = request.data.get('type')
+            if type is None:
+                return Response({"success": False, "message": "type param describing month or week is missing."}, status=400)
+            if type == 'month':
+                now = datetime.datetime.now()
+                queryset = models.PatientAppointment.objects.filter(
+                appointment_start_time__year=now.year, appointment_start_time__month=now.month
+                ).aggregate(unpaid_amount=Sum('unpaid_amount'))['unpaid_amount']
+                return Response({'year': now.year,'month': now.strftime('%B'),'unpaid_amount': queryset})
+            elif type == 'week':
+                TODAY = date.today()
+                start = TODAY - timedelta(days=TODAY.weekday())
+                end = start + timedelta(days=6)
+                # now = datetime.date()
+                # models.PatientAppointment.objects.filter(appointment_start_time__iso_week_day=1)
+                queryset = models.PatientAppointment.objects.filter(
+                appointment_start_time__iso_week_day=1).aggregate(unpaid_amount=Sum('unpaid_amount'))['unpaid_amount']
+                return Response({'weekday': datetime.datetime.today().weekday(),'Total unpaid_amounts of this week': queryset})
+        except Exception as e:
+            return Response({'error':str(e)})
+
+
+class TotalAmountSumViewSet(viewsets.ModelViewSet):
+    # queryset = models.PatientAppointment.objects.all()
+    serializer_class = serializers.PatientAppointmentSerializer
+    def list(self, request, *args, **kwargs):
+        try:
+            type = request.data.get('type')
+            if type is None:
+                return Response({"success": False, "message": "type param describing month or week is missing."}, status=400)
+            if type == 'month':
+                now = datetime.datetime.now()
+                queryset = models.PatientAppointment.objects.filter(
+                appointment_start_time__year=now.year, appointment_start_time__month=now.month
+                ).aggregate(total_amount=Sum('total_amount'))['total_amount']
+                return Response({'year': now.year,'month': now.strftime('%B'),'total_amount': queryset})
+            elif type == 'week':
+                TODAY = date.today()
+                start = TODAY - timedelta(days=TODAY.weekday())
+                end = start + timedelta(days=6)
+                # now = datetime.date()
+                # models.PatientAppointment.objects.filter(appointment_start_time__iso_week_day=1)
+                queryset = models.PatientAppointment.objects.filter(
+                appointment_start_time__week_day=7).aggregate(total_amount=Sum('total_amount'))['total_amount']
+                return Response({'weekday': datetime.datetime.today().weekday(),'Sum of total_amounts of this week': queryset})
+        except Exception as e:
+            return Response({'error':str(e)})
+    
+    # Response = {
+    #     'year': now.year,
+    #     'month': now.strftime('%B'),
+    #     'unpaid_amount': queryset,
+    # }
+        
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+# class AmountPaidSumWeekViewSet(viewsets.ModelViewSet):
+#     queryset = models.PatientAppointment.objects.all()
+#     serializer_class = serializers.PatientAppointmentSerializer
+#     def list(self, request, *args, **kwargs):
+#         try:
+#             response = super().list(request, *args, **kwargs)
+#             response.data['sum'] = sum([data.get('total_amount', 0) for data in response.data['results']])
+#             return response
+#         except Exception as e:
+#             return Response({'error':str(e)})
     
     
     
@@ -257,7 +363,7 @@ class AppointmentsForDayViewSet(viewsets.ModelViewSet):
     #             serializer_appointment = serializers.PatientAppointmentSerializer(patient_appointment)
     #         return Response({'success':True, 'msg':'Data retrieved', 'data':serializer.data,'appointment':serializer_appointment.data})
     #     except Exception as e:
-    #         return str(e)
+    #         retstr(e)urn 
 
 
     # def retrieve(self, request, pk=None): #returns single object

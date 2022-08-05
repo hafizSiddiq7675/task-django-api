@@ -37,10 +37,13 @@ class PatientAppointment(models.Model):
         (BITCOIN, BITCOIN),
     ]
     payment_type = models.CharField("Select payment Type", choices=PAYMENT_TYPE_CHOICES, null=False, max_length=15, default='USD')
-    unpaid_amount = models.IntegerField(_("Enter unpaid amount"))
-    total_amount = models.IntegerField(_("Enter total amount"))
+    # paid_amount = models.IntegerField(_("Enter paid amount"), null=True)
+    paid_amount = models.DecimalField(_("Enter amount paid"), max_digits=5, decimal_places=2, null=True)
+    # unpaid_amount = models.IntegerField(_("Enter unpaid amount"))
+    unpaid_amount = models.DecimalField(_("Enter unpaid amount"), max_digits=5, decimal_places=2, null=True)
+    total_amount = models.DecimalField(_("Enter Total amount"), max_digits=5, decimal_places=2, null=True)
+    # total_amount = models.IntegerField(_("Enter total amount"))
     
     
     def __str__(self):
         return str(self.id)
-

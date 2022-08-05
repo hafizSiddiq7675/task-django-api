@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'drf_yasg',
+    'django_filters',
 ]
 
 
@@ -49,10 +50,13 @@ INSTALLED_APPS = [
 #     'PAGE_SIZE' : 5
 # }
 
-
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASSES': "rest_framework.pagination.PageNumberPagination",
+    'DEFAULT_PAGINATION_CLASS': "rest_framework.pagination.PageNumberPagination",
+    # 'DEFAULT_PAGINATION_CLASSES': "rest_framework.pagination.PageNumberPagination",
     'PAGE_SIZE' : 5,
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
 }
 # REST_FRAMEWORK = {
 #     'DEFAULT_PERMISSION_CLASSES': (
@@ -139,12 +143,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
 USE_TZ = True
-
 DATETIME_FORMAT = '%d-%m-%Y-%H-%M-%S'
 
 
