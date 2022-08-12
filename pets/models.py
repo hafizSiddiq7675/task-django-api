@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-# Create your models here.
+
 class Patient(models.Model):
 
     pet_name = models.CharField(max_length=255)
@@ -24,7 +24,7 @@ class Patient(models.Model):
     
     
 class PatientAppointment(models.Model):
-    patient_id = models.ForeignKey(Patient, on_delete=models.DO_NOTHING, null=True) #, null=TrueSS)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, null=True) #, null=True)
     appointment_start_time = models.DateTimeField(_("Appointment start time"), auto_now=False, auto_now_add=False)
     appointment_end_time = models.DateTimeField(_("Appointment end time"), auto_now=False, auto_now_add=False)
     description = models.CharField(_("Enter description"), max_length=1024)
@@ -37,12 +37,9 @@ class PatientAppointment(models.Model):
         (BITCOIN, BITCOIN),
     ]
     payment_type = models.CharField("Select payment Type", choices=PAYMENT_TYPE_CHOICES, null=False, max_length=15, default='USD')
-    # paid_amount = models.IntegerField(_("Enter paid amount"), null=True)
     paid_amount = models.DecimalField(_("Enter amount paid"), max_digits=5, decimal_places=2, null=True)
-    # unpaid_amount = models.IntegerField(_("Enter unpaid amount"))
     unpaid_amount = models.DecimalField(_("Enter unpaid amount"), max_digits=5, decimal_places=2, null=True)
     total_amount = models.DecimalField(_("Enter Total amount"), max_digits=5, decimal_places=2, null=True)
-    # total_amount = models.IntegerField(_("Enter total amount"))
     
     
     def __str__(self):

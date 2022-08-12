@@ -7,13 +7,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework import status
 from django_filters import rest_framework as filters
-from django.db.models import Sum
-from datetime import date, timedelta
-import calendar
-import datetime
-
-
-
+from django.db.models import Sum, Count
+from datetime import datetime, date, timedelta
 
 
 # *****************************************  PatientAppointmentViewset  *****************************************
@@ -43,14 +38,6 @@ class PatientAppointmentViewset(viewsets.ModelViewSet):
             patient_appointment = models.PatientAppointment.objects.get(id=id)
             serializer = serializers.PatientAppointmentSerializer(patient_appointment)
         return Response({'success':True, 'msg':'Data retrieved', 'data':serializer.data})
-
-
-    # def create(self, request):
-    #     serializer = serializers.PatientAppointmentSerializer(data=request.data)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return Response({'success':True, 'msg':'Data Created', 'data':serializer.data}, status=status.HTTP_201_CREATED)
-    #     return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
 
     def create(self, request, *args, **kwargs):
@@ -115,19 +102,7 @@ class PatientViewset(viewsets.ModelViewSet):
             serializer = serializers.PatientSerializer(queryset, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
     
-    
-    # def retrieve(self, request, pk=None): #returns single object
-    #     try:
-    #         # id = pk
-    #         if id is not None:
-    #             patient = models.Patient.objects.get(id=id)
-    #             serializer = serializers.PatientSerializer(patient)
-    #         return Response({'success':True, 'msg':'Data retrieved', 'data':serializer.data})
-    #     except Exception as e :
-    #         return Response({'error':str(e)})
-
-    
-        
+         
     def retrieve(self, request, pk=None): #returns single object
         try:
             id = pk
@@ -176,10 +151,15 @@ class PatientViewset(viewsets.ModelViewSet):
         return Response({'success':True, 'msg':'Data DEleted'})
 
         
+# *****************************************  UnPaidAppointmentViewSet  *****************************************
+        
 class UnPaidAppointmentViewSet(viewsets.ModelViewSet):
     queryset = models.PatientAppointment.objects.filter(unpaid_amount__gt=0)
     serializer_class = serializers.PatientAppointmentSerializer
     
+
+# *****************************************  AppointmentsForDayViewSet  *****************************************
+
 
 class AppointmentsForDayViewSet(viewsets.ModelViewSet):
     queryset = models.PatientAppointment.objects.all()
@@ -193,34 +173,7 @@ class AppointmentsForDayViewSet(viewsets.ModelViewSet):
         return self.queryset.filter(appointment_start_time__date=date)
 
 
-# class AmountPaidSumWeekViewSet(viewsets.ModelViewSet):
-    
-#     # queryset = models.PatientAppointment.objects.all()
-#     queryset=models.PatientAppointment.objects.aggregate(Sum('paid_amount'))
-#     serializer_class = serializers.PatientAppointmentSerializer
-#     filter_backends = (filters.DjangoFilterBackend)
-#     filterset_fields = ('appointment_start_time', 'appointment_end_time', 'description', 'payment_type', 'paid_amount', 'unpaid_amount', 'total_amount', 'patient_id')
-
-#     def get_queryset(self):
-#         # date = self.kwargs['date']
-#         summ = self.queryset
-#         return self.queryset.filter(paid_amount=summ)
-#         # return ({"Sum":summ})
-
-
-class TotalAmountSumViewSet(viewsets.ModelViewSet):
-    queryset = models.PatientAppointment.objects.all()
-    serializer_class = serializers.PatientAppointmentSerializer
-    def list(self, request, *args, **kwargs):
-        try:
-            response = super().list(request, *args, **kwargs)
-            response.data['sum'] = sum([data.get('total_amount', 0) for data in response.data['results']])
-            return response
-        except Exception as e:
-            return Response({'error':str(e)})
-
-    
-    
+# *****************************************  UnpaidAmountSumViewSet  *****************************************
 
 class UnpaidAmountSumViewSet(viewsets.ModelViewSet):
     # queryset = models.PatientAppointment.objects.all()
@@ -236,17 +189,18 @@ class UnpaidAmountSumViewSet(viewsets.ModelViewSet):
                 appointment_start_time__year=now.year, appointment_start_time__month=now.month
                 ).aggregate(unpaid_amount=Sum('unpaid_amount'))['unpaid_amount']
                 return Response({'year': now.year,'month': now.strftime('%B'),'unpaid_amount': queryset})
-            elif type == 'week':
+            if type == 'week':
                 TODAY = date.today()
                 start = TODAY - timedelta(days=TODAY.weekday())
                 end = start + timedelta(days=6)
-                # now = datetime.date()
-                # models.PatientAppointment.objects.filter(appointment_start_time__iso_week_day=1)
                 queryset = models.PatientAppointment.objects.filter(
-                appointment_start_time__iso_week_day=1).aggregate(unpaid_amount=Sum('unpaid_amount'))['unpaid_amount']
-                return Response({'weekday': datetime.datetime.today().weekday(),'Total unpaid_amounts of this week': queryset})
+                    appointment_start_time__range=(start, end)).aggregate(unpaid_amount=Sum('unpaid_amount'))['unpaid_amount']
+                return Response({'unpaid_amount': queryset})
         except Exception as e:
             return Response({'error':str(e)})
+
+
+# *****************************************  TotalAmountSumViewSet  *****************************************
 
 
 class TotalAmountSumViewSet(viewsets.ModelViewSet):
@@ -267,122 +221,50 @@ class TotalAmountSumViewSet(viewsets.ModelViewSet):
                 TODAY = date.today()
                 start = TODAY - timedelta(days=TODAY.weekday())
                 end = start + timedelta(days=6)
-                # now = datetime.date()
-                # models.PatientAppointment.objects.filter(appointment_start_time__iso_week_day=1)
                 queryset = models.PatientAppointment.objects.filter(
-                appointment_start_time__week_day=7).aggregate(total_amount=Sum('total_amount'))['total_amount']
-                return Response({'weekday': datetime.datetime.today().weekday(),'Sum of total_amounts of this week': queryset})
+                    appointment_start_time__range=(start, end)).aggregate(total_amount=Sum('total_amount'))['total_amount']
+                return Response({'total_amounts': queryset})
         except Exception as e:
             return Response({'error':str(e)})
     
-    # Response = {
-    #     'year': now.year,
-    #     'month': now.strftime('%B'),
-    #     'unpaid_amount': queryset,
-    # }
-        
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-# class AmountPaidSumWeekViewSet(viewsets.ModelViewSet):
-#     queryset = models.PatientAppointment.objects.all()
-#     serializer_class = serializers.PatientAppointmentSerializer
-#     def list(self, request, *args, **kwargs):
-#         try:
-#             response = super().list(request, *args, **kwargs)
-#             response.data['sum'] = sum([data.get('total_amount', 0) for data in response.data['results']])
-#             return response
-#         except Exception as e:
-#             return Response({'error':str(e)})
-    
-    
-    
-    
-    # def retrieve(self, request, pk=None): #returns single object
-    #     try:
-    #         id = pk
-    #         if id is not None:
-    #             patient = models.Patient.objects.get(id=id)
-    #             serializer = serializers.PatientSerializer(patient)
-    #             patient_appointment = models.PatientAppointment.objects.get(id=patient)
-    #             serializer_appointment = serializers.PatientAppointmentSerializer(patient_appointment)
-    #         return Response({'success':True, 'msg':'Data retrieved', 'data':serializer.data,'appointment':serializer_appointment.data})
-    #     except Exception as e:
-    #         retstr(e)urn 
+# *****************************************  GetPopularPetTypeViewSet  *****************************************
+
+class GetPopularPetTypeViewSet(viewsets.ViewSet):
+    serializer_class = serializers.PatientAppointmentSerializer
+    def list(self, request):
+        qs= models.Patient.objects.values('pet_type').annotate(count=Count('pet_type')).order_by('-count')[:1]
+        return Response({'Most popular pet_type':(qs)})
 
 
-    # def retrieve(self, request, pk=None): #returns single object
-    #     id = pk
-    #     if id is not None:
-    #         patient = models.Patient.objects.get(id=id)
-    #         serializer = serializers.PatientSerializer(patient)
-    #         patient_appointment = models.PatientAppointment.objects.get(id=patient)
-    #         serializer_appointment = serializers.PatientAppointmentSerializer(patient_appointment)
-    #     return Response({'success':True, 'msg':'Data retrieved', 'data':serializer.data,'appointment':serializer_appointment.data})
-    
-    
-    
-# class PatientViewset(viewsets.ModelViewSet):
-#     queryset = models.Patient.objects.all()
-    # pagination_class = CustomPageNumberPagination
-#     serializer_class = serializers.PatientSerializer
-    
-# class PatientAppointmentViewset(viewsets.ModelViewSet):
-#     queryset = models.PatientAppointment.objects.all()
-#     pagination_class = CustomPageNumberPagination
-#     serializer_class = serializers.PatientAppointmentSerializer
+# *****************************************  GetSumOfPetTypesViewSet  *****************************************
+
+
+class GetSumOfPetTypesViewSet(viewsets.ViewSet):
+    serializer_class = serializers.PatientAppointmentSerializer
+    def list(self, request):
+        try: 
+            type = request.data.get('type')
+            if type is None:
+                return Response({"success": False, "message": "type param describing pet_type is missing."}, status=400)
+            if type == 'dog':
+                qs_dog = models.PatientAppointment.objects.filter(patient__pet_type='dog').aggregate(Sum('total_amount'))
+                dog_sum=qs_dog
+                return Response({'money made from pet_type(dog)':(qs_dog)})
+            elif type == 'cat':
+                qs_cat = models.PatientAppointment.objects.filter(patient__pet_type='cat').aggregate(Sum('total_amount'))
+                cat_sum=qs_cat
+                return Response({'money made from pet_type(cat)':(qs_cat)})
+            elif type == 'bird':
+                qs_bird = models.PatientAppointment.objects.filter(patient__pet_type='bird').aggregate(Sum('total_amount'))
+                bird_sum=qs_bird
+                return Response({'money made from pet_type(bird)':(qs_bird)})
+            elif type == 'all':
+                return Response({'money made from all pet_types':
+                    {'dog':(models.PatientAppointment.objects.filter(patient__pet_type='dog').aggregate(Sum('total_amount'))),
+                     'cat':(models.PatientAppointment.objects.filter(patient__pet_type='cat').aggregate(Sum('total_amount'))),
+                     'bird':(models.PatientAppointment.objects.filter(patient__pet_type='bird').aggregate(Sum('total_amount')))}})
+        except Exception as e:
+            return Response({'error':str(e)})
+        # qs = models.PatientAppointment.objects.filter(patient__pet_type='dog').aggregate(Sum('total_amount'))
+        # return Response({'money made from pet_type(dog)':(qs)})
