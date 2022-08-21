@@ -15,13 +15,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-# from order import views, viewsets
+from order import views, viewsets
 from .routers import router
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include(router.urls)),
+    path('create-order/', viewsets.create_order, name='personalorder'),  
     # path('order/create-order/', views.CreateOrder.as_view()),
     # path('order/orderviewset/', viewsets.OrderViewSet.as_view({'get': 'list'})),
-    path('', include(router.urls)),
+    # path('create_order/', viewsets.create_order, name='create_order'), 
     
 ]
