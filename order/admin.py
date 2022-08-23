@@ -10,7 +10,7 @@ class Services(admin.ModelAdmin):
 
 @admin.register(Order)
 class Orders(admin.ModelAdmin):
-    list_display = ['id','date']
+    list_display = ['id','date', 'isDelete']
 
     
 @admin.register(OrderItem)

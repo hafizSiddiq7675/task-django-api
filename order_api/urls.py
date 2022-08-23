@@ -21,9 +21,5 @@ from .routers import router
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
-    path('create-order/', viewsets.create_order, name='personalorder'),  
-    # path('order/create-order/', views.CreateOrder.as_view()),
-    # path('order/orderviewset/', viewsets.OrderViewSet.as_view({'get': 'list'})),
-    # path('create_order/', viewsets.create_order, name='create_order'), 
-    
+    path('total-orders/', viewsets.TotalOrdersViewset.as_view({'get': 'list'})),
 ]
